@@ -1,0 +1,7 @@
+domain = "router.asus.com"
+https = true
+ddns = true
+# dns_server 0: cloudflare
+dns_server = 0
+cf_mail = "test@asus.com"
+cf_key = "xxxxxxxxxxxx"
