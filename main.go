@@ -2,6 +2,7 @@ package main
 
 import (
 	"io/ioutil"
+	"log"
 	"os"
 	"path"
 	"path/filepath"
@@ -12,11 +13,11 @@ import (
 
 type Conf struct {
 	Domain    *string `toml:"domain"`
-	HTTPS     *bool   `toml:"https"`
 	DDNS      *bool   `toml:"ddns"`
-	DNSServer *int    `toml:"dns_server"`
-	CFMail    *string `toml:"cf_mail"`
-	CFKey     *string `toml:"cf_key"`
+	HTTPS     *bool   `toml:"https"`
+	DNSServer *string `toml:"dns_server"`
+	DNSKey    *string `toml:"dns_key"`
+	DNSEmail  *string `toml:"dns_email"`
 }
 
 var Root string
@@ -32,7 +33,7 @@ func init() {
 func LoadConf() *Conf {
 	body, err := ioutil.ReadFile(path.Join(Root, "conf", "conf.toml"))
 	if err != nil {
-		panic("配置文件出错")
+		panic("配置文件不存在")
 	}
 	conf := Conf{}
 	err = toml.Unmarshal(body, &conf)
@@ -44,10 +45,23 @@ func LoadConf() *Conf {
 
 func main() {
 	conf := LoadConf()
-	if len(strings.Split(*conf.Domain, ".")) != 3 {
-		panic("域名长度错误")
-	}
-	if err := UpdateDNS(*conf.CFKey, *conf.CFMail, *conf.Domain); err != nil {
-		panic("DNS 更新失败")
+	switch {
+	case conf.Domain == nil || conf.DNSServer == nil || conf.DNSKey == nil:
+		panic("缺少必要设置")
+	case len(strings.Split(*conf.Domain, ".")) != 3:
+		panic("域名格式错误")
+	case conf.DDNS != nil && conf.DNSServer != nil && *conf.DDNS == true:
+		switch *conf.DNSServer {
+		case "cf":
+			if err := cfUpdateDNS(*conf.DNSKey, *conf.DNSEmail, *conf.Domain); err != nil {
+				panic("DNS 更新失败")
+			}
+		default:
+			panic("暂不支持此 DNS 提供商，欢迎提交 PR !")
+		}
+	case conf.HTTPS != nil && *conf.HTTPS == true:
+		log.Println("HTTPS 待开发，欢迎 PR")
+	default:
+		panic("未进行任何设置")
 	}
 }

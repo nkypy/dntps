@@ -14,29 +14,6 @@ import (
 	cloudflare "github.com/cloudflare/cloudflare-go"
 )
 
-type IP struct {
-	Origin *string `json:"origin"`
-}
-
-const IP_API = `https://httpbin.org/ip`
-
-func ipGet() (*string, error) {
-	resp, err := http.Get(IP_API)
-	if err != nil {
-		return nil, err
-	}
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-	ip := IP{}
-	err = json.Unmarshal(body, &ip)
-	if err != nil {
-		return nil, err
-	}
-	return ip.Origin, nil
-}
-
 func lastRecordGet() (*cloudflare.DNSRecord, error) {
 	if _, err := os.Stat(path.Join(Root, "data", "record.toml")); err == nil {
 		body, err := ioutil.ReadFile(path.Join(Root, "data", "record.toml"))
@@ -80,7 +57,7 @@ func newRecordGet(key, mail, domain string) (*cloudflare.API, *cloudflare.DNSRec
 	return api, &record, nil
 }
 
-func UpdateDNS(key, mail, domain string) error {
+func cfUpdateDNS(key, mail, domain string) error {
 	newIP, err := ipGet()
 	if err != nil {
 		return err

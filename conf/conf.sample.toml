@@ -1,7 +1,9 @@
-domain = "router.asus.com"
-https = true
+domain = "router.sample.com"
 ddns = true
-# dns_server 0: cloudflare
-dns_server = 0
-cf_mail = "test@asus.com"
-cf_key = "xxxxxxxxxxxx"
+https = true
+# ddns 为 true 时，必须设置 dns_server 才有作用
+# dns_server: cf -> CloudFlare
+dns_server = "cf"
+dns_key = "samplekey"
+# CloudFlare needs email, others don't need to write email
+dns_email = "router@sample.com"
