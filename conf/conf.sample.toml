@@ -1,9 +1,7 @@
 domain = "router.sample.com"
-ddns = true
 https = true
-# ddns 为 true 时，必须设置 dns_server 才有作用
-# dns_server: cf -> CloudFlare
-dns_server = "cf"
-dns_key = "samplekey"
+# dns: cf -> CloudFlare
+dns = "cf"
 # CloudFlare needs email, others don't need to write email
-dns_email = "router@sample.com"
+cf_key = "samplekey"
+cf_email = "router@sample.com"

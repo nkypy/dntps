@@ -8,16 +8,17 @@ import (
 	"path/filepath"
 	"strings"
 
+	"go.kshih.com/dntps/dnsapi"
+
 	toml "github.com/pelletier/go-toml"
 )
 
 type Conf struct {
-	Domain    *string `toml:"domain"`
-	DDNS      *bool   `toml:"ddns"`
-	HTTPS     *bool   `toml:"https"`
-	DNSServer *string `toml:"dns_server"`
-	DNSKey    *string `toml:"dns_key"`
-	DNSEmail  *string `toml:"dns_email"`
+	Domain  *string `toml:"domain"`
+	HTTPS   *bool   `toml:"https"`
+	DNS     *string `toml:"dns"`
+	CFKey   *string `toml:"cf_key"`
+	CFEmail *string `toml:"cf_email"`
 }
 
 var Root string
@@ -44,24 +45,36 @@ func LoadConf() *Conf {
 }
 
 func main() {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Println(r)
+		}
+	}()
+	lastRecordFn := path.Join(Root, "data", "record.toml")
 	conf := LoadConf()
 	switch {
-	case conf.Domain == nil || conf.DNSServer == nil || conf.DNSKey == nil:
-		panic("缺少必要设置")
+	case conf.Domain == nil || conf.DNS == nil:
+		panic("缺少必要的设置！")
 	case len(strings.Split(*conf.Domain, ".")) != 3:
-		panic("域名格式错误")
-	case conf.DDNS != nil && conf.DNSServer != nil && *conf.DDNS == true:
-		switch *conf.DNSServer {
+		panic("域名格式错误！")
+	default:
+		ipCurrent, err := ipGet()
+		if err != nil {
+			panic("当前 IP 获取失败！")
+		}
+		switch *conf.DNS {
 		case "cf":
-			if err := cfUpdateDNS(*conf.DNSKey, *conf.DNSEmail, *conf.Domain); err != nil {
-				panic("DNS 更新失败")
+			if conf.CFKey == nil || conf.CFEmail == nil {
+				panic("缺少 CloudFlare Key 和 Email!")
+			}
+			dnsapi.CFUpdate(
+				*ipCurrent, lastRecordFn,
+				*conf.CFKey, *conf.CFEmail, *conf.Domain)
+			if conf.HTTPS != nil && *conf.HTTPS == true {
+				// 申请 HTTPS
 			}
 		default:
 			panic("暂不支持此 DNS 提供商，欢迎提交 PR !")
 		}
-	case conf.HTTPS != nil && *conf.HTTPS == true:
-		log.Println("HTTPS 待开发，欢迎 PR")
-	default:
-		panic("未进行任何设置")
 	}
 }
